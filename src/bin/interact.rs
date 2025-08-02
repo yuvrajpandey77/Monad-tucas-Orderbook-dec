@@ -27,22 +27,22 @@ enum Commands {
         address: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
     /// Get account balance
     Balance {
         /// Contract address
-        #[arg(short, long)]
+        #[arg(long)]
         address: String,
         
         /// Account address
-        #[arg(short, long)]
+        #[arg(long)]
         account: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -65,7 +65,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -80,7 +80,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -99,7 +99,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -122,7 +122,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
 }

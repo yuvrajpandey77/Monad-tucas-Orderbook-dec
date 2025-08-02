@@ -30,7 +30,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL (defaults to Monad testnet)
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
         
         /// Gas price in wei

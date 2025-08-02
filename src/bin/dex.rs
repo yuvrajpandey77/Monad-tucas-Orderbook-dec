@@ -47,7 +47,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -82,7 +82,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -113,7 +113,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -132,7 +132,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -151,7 +151,7 @@ enum Commands {
         quote_token: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -166,7 +166,7 @@ enum Commands {
         user: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -185,7 +185,7 @@ enum Commands {
         token: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
     
@@ -208,7 +208,7 @@ enum Commands {
         private_key: String,
         
         /// RPC URL
-        #[arg(short, long, default_value = "https://rpc.testnet.monad.xyz")]
+        #[arg(short, long, default_value = "https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe")]
         rpc_url: String,
     },
 }
