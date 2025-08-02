@@ -12,10 +12,6 @@ serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
 
-# For smart contract compilation and deployment
-foundry-rs = "0.2"
-forge-std = "1.7"
-
 # For configuration and environment management
 dotenv = "0.15"
 config = "0.13"

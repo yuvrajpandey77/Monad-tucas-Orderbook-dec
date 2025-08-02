@@ -67,7 +67,7 @@ contract MonadToken is ERC20, Ownable {
         uint256 totalSupply,
         uint8 decimals
     ) {
-        return (name(), symbol(), totalSupply(), decimals());
+        return (ERC20.name(), ERC20.symbol(), ERC20.totalSupply(), ERC20.decimals());
     }
     
     /**

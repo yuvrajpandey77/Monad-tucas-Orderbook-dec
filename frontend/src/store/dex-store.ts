@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { ethers } from 'ethers'
+import { dexService } from '@/services/dex-service'
+import { NETWORK_CONFIG } from '@/config/network'
 
 // Extend Window interface to include ethereum
 declare global {
@@ -96,6 +98,28 @@ export const useDEXStore = create<DEXStore>((set) => ({
         throw new Error('MetaMask not found')
       }
       
+      // Request to switch to local network
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: NETWORK_CONFIG.chainId }],
+        })
+      } catch (switchError: any) {
+        // This error code indicates that the chain has not been added to MetaMask
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [NETWORK_CONFIG],
+            })
+          } catch (addError) {
+            throw new Error('Failed to add local network to MetaMask')
+          }
+        } else {
+          throw switchError
+        }
+      }
+      
       const provider = new ethers.BrowserProvider(window.ethereum)
       const accounts = await provider.send('eth_requestAccounts', [])
       const account = accounts[0]
@@ -105,6 +129,9 @@ export const useDEXStore = create<DEXStore>((set) => ({
       }
       
       const signer = await provider.getSigner()
+      
+      // Initialize DEX service
+      await dexService.initialize(signer)
       
       set({
         isConnected: true,

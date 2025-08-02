@@ -147,4 +147,4 @@ export class DEXService {
 }
 
 // Create a singleton instance
-export const dexService = new DEXService('0x...') // Replace with actual contract address 
+export const dexService = new DEXService('0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512') // OrderBookDEX contract address 

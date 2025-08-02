@@ -22,16 +22,16 @@ function TradingInterface() {
     clearError
   } = useDEXStore()
 
-  // Mock trading pairs for demo
+  // Trading pairs using deployed contracts
   const mockTradingPairs = [
     {
-      baseToken: '0x1234567890123456789012345678901234567890',
-      quoteToken: '0x0987654321098765432109876543210987654321',
+      baseToken: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // MonadToken
+      quoteToken: '0x0000000000000000000000000000000000000000', // ETH (native)
       baseTokenSymbol: 'MONAD',
-      quoteTokenSymbol: 'USDC',
+      quoteTokenSymbol: 'ETH',
       isActive: true,
-      minOrderSize: '1000000000000000000',
-      pricePrecision: '1000000000000000000'
+      minOrderSize: '1000000000000000000', // 1 token
+      pricePrecision: '1000000000000000000' // 18 decimals
     }
   ]
 

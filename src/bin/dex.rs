@@ -1,18 +1,15 @@
 use clap::{Parser, Subcommand};
 use ethers::{
-    core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
     providers::{Http, Provider},
-    signers::{LocalWallet, Signer},
+    signers::LocalWallet,
     types::{Address, U256},
-    contract::{Contract, ContractInstance},
+    contract::Contract,
     abi::Abi,
 };
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
-use anyhow::{Result, Context};
-use tracing::{info, error, warn};
+use anyhow::Result;
+use tracing::info;
+use std::sync::Arc;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -42,7 +39,7 @@ enum Commands {
         min_order_size: u64,
         
         /// Price precision
-        #[arg(short, long)]
+        #[arg(long)]
         price_precision: u64,
         
         /// Private key
@@ -69,15 +66,15 @@ enum Commands {
         quote_token: String,
         
         /// Order amount
-        #[arg(short, long)]
+        #[arg(long)]
         amount: u64,
         
         /// Order price
-        #[arg(short, long)]
+        #[arg(long)]
         price: u64,
         
         /// Is buy order
-        #[arg(short, long)]
+        #[arg(long)]
         is_buy: bool,
         
         /// Private key
@@ -104,11 +101,11 @@ enum Commands {
         quote_token: String,
         
         /// Order amount
-        #[arg(short, long)]
+        #[arg(long)]
         amount: u64,
         
         /// Is buy order
-        #[arg(short, long)]
+        #[arg(long)]
         is_buy: bool,
         
         /// Private key
@@ -276,18 +273,22 @@ async fn add_trading_pair(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call addTradingPair function
-    let tx = contract
-        .method("addTradingPair", (base_token, quote_token, U256::from(min_order_size), U256::from(price_precision)))?
-        .legacy()
-        .send()
-        .await?;
+    let min_order_size_u256 = U256::from(min_order_size);
+    let price_precision_u256 = U256::from(price_precision);
+    let args = (base_token, quote_token, min_order_size_u256, price_precision_u256);
+    let method = contract.method::<_, ()>("addTradingPair", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Trading pair added successfully!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -316,18 +317,22 @@ async fn place_limit_order(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call placeLimitOrder function
-    let tx = contract
-        .method("placeLimitOrder", (base_token, quote_token, U256::from(amount), U256::from(price), is_buy))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let price_u256 = U256::from(price);
+    let args = (base_token, quote_token, amount_u256, price_u256, is_buy);
+    let method = contract.method::<_, ()>("placeLimitOrder", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Limit order placed successfully!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -355,18 +360,21 @@ async fn place_market_order(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call placeMarketOrder function
-    let tx = contract
-        .method("placeMarketOrder", (base_token, quote_token, U256::from(amount), is_buy))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let args = (base_token, quote_token, amount_u256, is_buy);
+    let method = contract.method::<_, ()>("placeMarketOrder", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Market order placed successfully!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -389,18 +397,20 @@ async fn cancel_order(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call cancelOrder function
-    let tx = contract
-        .method("cancelOrder", U256::from(order_id))?
-        .legacy()
-        .send()
-        .await?;
+    let order_id_u256 = U256::from(order_id);
+    let method = contract.method::<_, ()>("cancelOrder", order_id_u256)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Order cancelled successfully!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -422,7 +432,7 @@ async fn get_order_book(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, provider);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(provider));
     
     // Call getOrderBook function
     let result: (Vec<U256>, Vec<U256>, Vec<U256>, Vec<U256>) = contract
@@ -461,7 +471,7 @@ async fn get_user_orders(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, provider);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(provider));
     
     // Call getUserOrders function
     let order_ids: Vec<U256> = contract
@@ -500,7 +510,7 @@ async fn get_balance(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, provider);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(provider));
     
     // Call getUserBalance function
     let balance: U256 = contract
@@ -533,30 +543,35 @@ async fn withdraw(
     let contract_abi = load_dex_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(client));
     
     // Call withdraw function
-    let tx = contract
-        .method("withdraw", (token_address, U256::from(amount)))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let args = (token_address, amount_u256);
+    let method = contract.method::<_, ()>("withdraw", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Withdrawal successful!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
 
 fn load_dex_abi() -> Result<Abi> {
-    // In a real implementation, you would load the compiled ABI
-    // For now, we'll return a placeholder
     info!("Loading DEX contract ABI...");
     
-    // This should be replaced with actual ABI loading
-    // For now, we'll use a minimal ABI
-    let abi_json = r#"[]"#;
-    let abi: Abi = serde_json::from_str(abi_json)?;
+    // Load the compiled ABI from the out directory
+    let abi_path = "out/OrderBookDEX.sol/OrderBookDEX.json";
+    let abi_content = std::fs::read_to_string(abi_path)?;
+    
+    // Parse the JSON and extract the ABI
+    let json: serde_json::Value = serde_json::from_str(&abi_content)?;
+    let abi_json = json["abi"].to_string();
+    
+    let abi: Abi = serde_json::from_str(&abi_json)?;
     Ok(abi)
 } 

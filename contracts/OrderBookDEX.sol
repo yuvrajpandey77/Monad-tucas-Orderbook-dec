@@ -2,17 +2,14 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-
 /**
  * @title OrderBookDEX
  * @dev High-performance on-chain order book DEX for Monad
  * Features: Limit orders, market orders, order matching, liquidity pools
  */
 contract OrderBookDEX is ReentrancyGuard, Ownable {
-    using Counters for Counters.Counter;
     
     // Structs
     struct Order {
@@ -36,7 +33,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
     }
     
     // State variables
-    Counters.Counter private _orderIdCounter;
+    uint256 private _orderIdCounter;
     mapping(uint256 => Order) public orders;
     mapping(address => mapping(address => TradingPair)) public tradingPairs;
     mapping(address => uint256[]) public userOrders;
@@ -106,8 +103,8 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         }
         
         // Create order
-        orderId = _orderIdCounter.current();
-        _orderIdCounter.increment();
+        orderId = _orderIdCounter;
+        _orderIdCounter++;
         
         orders[orderId] = Order({
             id: orderId,
@@ -188,7 +185,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 sellCount = 0;
         
         // Count orders
-        for (uint256 i = 0; i < _orderIdCounter.current(); i++) {
+        for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
                 order.baseToken == baseToken && 
@@ -206,7 +203,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 buyIndex = 0;
         uint256 sellIndex = 0;
         
-        for (uint256 i = 0; i < _orderIdCounter.current(); i++) {
+        for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
                 order.baseToken == baseToken && 
@@ -262,7 +259,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 bestSellOrderId = 0;
         
         // Find best buy and sell orders
-        for (uint256 i = 0; i < _orderIdCounter.current(); i++) {
+        for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
                 order.baseToken == baseToken && 
@@ -321,7 +318,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 remainingAmount = amount;
         uint256 totalCost = 0;
         
-        for (uint256 i = 0; i < _orderIdCounter.current() && remainingAmount > 0; i++) {
+        for (uint256 i = 0; i < _orderIdCounter && remainingAmount > 0; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
                 !order.isBuy && 
@@ -351,7 +348,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 remainingAmount = amount;
         uint256 totalRevenue = 0;
         
-        for (uint256 i = 0; i < _orderIdCounter.current() && remainingAmount > 0; i++) {
+        for (uint256 i = 0; i < _orderIdCounter && remainingAmount > 0; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
                 order.isBuy && 

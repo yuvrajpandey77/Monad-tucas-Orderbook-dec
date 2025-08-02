@@ -1,18 +1,15 @@
 use clap::{Parser, Subcommand};
 use ethers::{
-    core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
     providers::{Http, Provider},
-    signers::{LocalWallet, Signer},
+    signers::LocalWallet,
     types::{Address, U256},
-    contract::{Contract, ContractInstance},
+    contract::Contract,
     abi::Abi,
 };
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
-use anyhow::{Result, Context};
-use tracing::{info, error, warn};
+use anyhow::Result;
+use tracing::info;
+use std::sync::Arc;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -171,7 +168,7 @@ async fn get_token_info(contract_address: String, rpc_url: String) -> Result<()>
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, provider);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(provider));
     
     // Call getTokenInfo function
     let result: (String, String, U256, u8) = contract
@@ -199,7 +196,7 @@ async fn get_balance(contract_address: String, account_address: String, rpc_url:
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, provider);
+    let contract = Contract::new(contract_address, contract_abi, Arc::new(provider));
     
     // Call getBalance function
     let balance: U256 = contract
@@ -232,18 +229,21 @@ async fn mint_tokens(
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call mint function
-    let tx = contract
-        .method("mint", (to_address, U256::from(amount)))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let args = (to_address, amount_u256);
+    let method = contract.method::<_, ()>("mint", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Mint transaction successful!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -261,18 +261,19 @@ async fn public_mint(contract_address: String, private_key: String, rpc_url: Str
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call publicMint function
-    let tx = contract
-        .method("publicMint", ())?
-        .legacy()
-        .send()
-        .await?;
+    let method = contract.method::<_, ()>("publicMint", ())?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Public mint transaction successful!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -295,18 +296,20 @@ async fn burn_tokens(
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call burn function
-    let tx = contract
-        .method("burn", U256::from(amount))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let method = contract.method::<_, ()>("burn", amount_u256)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Burn transaction successful!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -331,18 +334,21 @@ async fn transfer_tokens(
     let contract_abi = load_contract_abi()?;
     
     // Create contract instance
-    let contract = Contract::new(contract_address, contract_abi, client);
+    let client_arc = Arc::new(client);
+    let contract = Contract::new(contract_address, contract_abi, client_arc);
     
     // Call transfer function
-    let tx = contract
-        .method("transfer", (to_address, U256::from(amount)))?
-        .legacy()
-        .send()
-        .await?;
+    let amount_u256 = U256::from(amount);
+    let args = (to_address, amount_u256);
+    let method = contract.method::<_, ()>("transfer", args)?;
+    let legacy = method.legacy();
+    let tx = legacy.send().await?;
     
     let receipt = tx.await?;
     info!("Transfer transaction successful!");
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
+    if let Some(receipt) = receipt {
+        info!("Transaction hash: {:?}", receipt.transaction_hash);
+    }
     
     Ok(())
 }
@@ -352,9 +358,14 @@ fn load_contract_abi() -> Result<Abi> {
     // For now, we'll return a placeholder
     info!("Loading contract ABI...");
     
-    // This should be replaced with actual ABI loading
-    // For now, we'll use a minimal ABI
-    let abi_json = r#"[]"#;
-    let abi: Abi = serde_json::from_str(abi_json)?;
+    // Load the compiled ABI from the out directory
+    let abi_path = "out/MonadToken.sol/MonadToken.json";
+    let abi_content = std::fs::read_to_string(abi_path)?;
+    
+    // Parse the JSON and extract the ABI
+    let json: serde_json::Value = serde_json::from_str(&abi_content)?;
+    let abi_json = json["abi"].to_string();
+    
+    let abi: Abi = serde_json::from_str(&abi_json)?;
     Ok(abi)
 } 

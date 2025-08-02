@@ -1,16 +1,16 @@
 use clap::{Parser, Subcommand};
 use ethers::{
-    core::k256::ecdsa::SigningKey,
-    middleware::SignerMiddleware,
+    middleware::{SignerMiddleware, Middleware},
     providers::{Http, Provider},
-    signers::{LocalWallet, Signer},
-    types::{Address, U256},
-    contract::{Contract, ContractFactory},
+    signers::LocalWallet,
+    types::{U256},
+    contract::ContractFactory,
     abi::Abi,
 };
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 use anyhow::{Result, Context};
 use tracing::{info, error, warn};
 
@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn deploy_contract(private_key: String, rpc_url: String, gas_price: u64) -> Result<()> {
+async fn deploy_contract(private_key: String, rpc_url: String, _gas_price: u64) -> Result<()> {
     info!("Starting contract deployment to Monad testnet...");
     
     // Setup provider and wallet
@@ -100,49 +100,45 @@ async fn deploy_contract(private_key: String, rpc_url: String, gas_price: u64) -
     
     // Check balance
     let balance = client.get_balance(address, None).await?;
-    info!("Account balance: {} wei", balance);
+    info!("Balance: {} wei", balance);
     
     if balance == U256::zero() {
         error!("Insufficient balance for deployment");
-        return Err(anyhow::anyhow!("Account has no balance"));
+        return Err(anyhow::anyhow!("Insufficient balance"));
     }
     
     // Load contract bytecode and ABI
     let contract_bytecode = load_contract_bytecode()?;
     let contract_abi = load_contract_abi()?;
     
+    info!("Contract bytecode size: {} bytes", contract_bytecode.len());
+    
     // Create contract factory
-    let factory = ContractFactory::new(contract_abi, contract_bytecode, client);
+    let factory = ContractFactory::new(
+        contract_abi, 
+        contract_bytecode.into(), 
+        Arc::new(client)
+    );
     
     // Deploy contract
-    info!("Deploying MonadToken contract...");
-    let deploy_tx = factory.deploy(())?.legacy();
-    let deploy_tx = deploy_tx.gas_price(gas_price);
+    info!("Deploying contract...");
+    let deploy_tx = factory.deploy(())?;
     
-    let pending_tx = deploy_tx.send().await?;
-    info!("Deployment transaction sent: {:?}", pending_tx.tx_hash());
-    
-    // Wait for deployment
-    let receipt = pending_tx.await?;
-    let contract_address = receipt.contract_address
-        .context("No contract address in receipt")?;
+    let deployed_contract = deploy_tx.send().await?;
+    let contract_address = deployed_contract.address();
     
     info!("Contract deployed successfully!");
     info!("Contract address: {:?}", contract_address);
-    info!("Transaction hash: {:?}", receipt.transaction_hash);
-    info!("Gas used: {:?}", receipt.gas_used);
     
-    // Save deployment info
+    // Save deployment config
     let config = DeploymentConfig {
         contract_address: Some(format!("{:?}", contract_address)),
         deployer_address: Some(format!("{:?}", address)),
         network: "monad_testnet".to_string(),
-        deployment_tx: Some(format!("{:?}", receipt.transaction_hash)),
+        deployment_tx: Some("Transaction hash not available in ethers v2".to_string()),
     };
     
     save_deployment_config(config)?;
-    
-    info!("Deployment configuration saved to config/deployment.json");
     
     Ok(())
 }
