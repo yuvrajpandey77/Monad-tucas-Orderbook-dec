@@ -1,160 +1,111 @@
-# Quick Backend Deployment Guide
+# 🚀 Quick DEX Deployment Guide
 
-This is a quick guide to deploy the Monad DEX backend.
+**The fastest way to deploy your Monad DEX backend**
 
-## 🚀 Quick Start
+## ⚡ Quick Start (Recommended)
 
-### Prerequisites
-- Rust and Foundry installed
-- Monad testnet tokens
-- Private key for deployment
-
-### Option 1: Local Deployment (Recommended for Development)
-
-1. **Setup Environment**:
+### 1. Setup Environment
 ```bash
 cd rust-project
 cp .env.example .env
-# Edit .env with your private key and settings
+# Edit .env with your private key
 ```
 
-2. **Run Deployment Script**:
+### 2. Deploy Everything
 ```bash
-chmod +x scripts/deploy-backend.sh
-./scripts/deploy-backend.sh
+chmod +x scripts/deploy-all.sh
+./scripts/deploy-all.sh
 ```
 
-### Option 2: Docker Deployment
+**That's it!** This will deploy:
+- ✅ Token A (for trading)
+- ✅ Token B (for trading) 
+- ✅ DEX Contract
+- ✅ Trading Pair
+- ✅ Test everything
 
-1. **Build and Run with Docker**:
+## 🔧 Alternative Methods
+
+### Option 1: Docker Deployment
 ```bash
-# Set your private key
 export PRIVATE_KEY=your_private_key_here
-
-# Build and run
 docker-compose up --build
 ```
 
-2. **Or build manually**:
+### Option 2: Manual Deployment
 ```bash
-docker build -t monad-dex-backend .
-docker run -e PRIVATE_KEY=$PRIVATE_KEY monad-dex-backend
+# Build
+cargo build --release
+forge build
+
+# Deploy DEX (includes tokens)
+chmod +x scripts/deploy-dex.sh
+./scripts/deploy-dex.sh
 ```
 
-### Option 3: Cloud Deployment
+## 📋 What You Get
 
-#### AWS EC2 (Quick Setup)
+After deployment, you'll have:
+- **Token A**: `0x...` (for trading)
+- **Token B**: `0x...` (for trading)
+- **DEX Contract**: `0x...` (order book)
+- **Trading Pair**: TokenA/TokenB
+
+Addresses are saved in `.deployed-addresses`
+
+## 🧪 Test Your Deployment
+
 ```bash
-# Launch Ubuntu 22.04 instance
-# SSH into instance
-ssh -i your-key.pem ubuntu@your-instance-ip
+# Test tokens
+cargo run --bin monad-interact info --address $TOKEN_A_ADDRESS
 
-# Install dependencies
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-curl -L https://foundry.paradigm.xyz | bash
-source ~/.bashrc
-foundryup
+# Test DEX
+cargo run --bin monad-dex get-order-book \
+  --address $DEX_ADDRESS \
+  --base-token $TOKEN_A_ADDRESS \
+  --quote-token $TOKEN_B_ADDRESS
 
-# Clone and deploy
-git clone https://github.com/yuvrajpandey77/Monad-tucas-Orderbook-dec.git
-cd Monad-tucas-Orderbook-dec
-./scripts/deploy-backend.sh --service
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-```bash
-# Required
-PRIVATE_KEY=your_private_key_here
-RPC_URL=https://rpc.testnet.monad.xyz
-
-# Optional
-CHAIN_ID=1337
-GAS_PRICE=20000000000
-RUST_LOG=info
-```
-
-### Contract Addresses
-After deployment, update your frontend with:
-- `TOKEN_CONTRACT_ADDRESS`: Deployed token contract
-- `DEX_CONTRACT_ADDRESS`: Deployed DEX contract
-
-## 🧪 Testing
-
-### Test Contract Deployment
-```bash
-cargo run --bin monad-interact info \
-    --address CONTRACT_ADDRESS \
-    --rpc-url https://rpc.testnet.monad.xyz
-```
-
-### Test DEX Functions
-```bash
-# Add trading pair
-cargo run --bin monad-dex add-trading-pair \
-    --address DEX_ADDRESS \
-    --base-token TOKEN_ADDRESS \
-    --quote-token USDC_ADDRESS \
-    --private-key YOUR_PRIVATE_KEY
-
-# Place order
+# Place a test order
 cargo run --bin monad-dex place-limit-order \
-    --address DEX_ADDRESS \
-    --base-token TOKEN_ADDRESS \
-    --quote-token USDC_ADDRESS \
-    --amount 1000000000000000000 \
-    --price 1000000000000000000 \
-    --is-buy true \
-    --private-key YOUR_PRIVATE_KEY
+  --address $DEX_ADDRESS \
+  --base-token $TOKEN_A_ADDRESS \
+  --quote-token $TOKEN_B_ADDRESS \
+  --amount 1000000000000000000 \
+  --price 1000000000000000000 \
+  --is-buy true \
+  --private-key $PRIVATE_KEY
 ```
 
-## 📊 Monitoring
+## 🔗 Update Frontend
 
-### Check Service Status
-```bash
-# If using systemd service
-sudo systemctl status monad-dex
-
-# Check logs
-journalctl -u monad-dex -f
-```
-
-### Health Check
-```bash
-# Test RPC connection
-curl -X POST https://rpc.testnet.monad.xyz \
-    -H "Content-Type: application/json" \
-    -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+Copy addresses from `.deployed-addresses` to your frontend:
+```typescript
+// In your frontend
+const DEX_ADDRESS = "0x..."; // From .deployed-addresses
+const TOKEN_A_ADDRESS = "0x...";
+const TOKEN_B_ADDRESS = "0x...";
 ```
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### Common Issues:
+1. **"Private key not set"** → Edit `.env` file
+2. **"Foundry not found"** → `curl -L https://foundry.paradigm.xyz | bash`
+3. **"Rust not found"** → `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 
-1. **Build Failures**:
+### Check Network:
 ```bash
-cargo clean && cargo build
-```
-
-2. **Network Issues**:
-```bash
-# Test RPC connection
-curl https://rpc.testnet.monad.xyz
-```
-
-3. **Gas Issues**:
-```bash
-# Increase gas limit
-forge create --gas-limit 5000000 ...
+curl -X POST https://rpc.testnet.monad.xyz \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 ```
 
 ## 📞 Support
 
 - Check logs: `journalctl -u monad-dex -f`
 - Test network: `curl https://rpc.testnet.monad.xyz`
-- Verify contracts on explorer: https://explorer.monad.xyz
+- Explorer: https://explorer.monad.xyz
 
 ---
 
-**Deployment completed! 🚀** 
+**🎉 Your DEX is ready! Start trading!** 
