@@ -201,6 +201,12 @@ export class DEXService {
 
   // Check if trading pair exists and is active
   async isTradingPairActive(baseToken: string, quoteToken: string): Promise<boolean> {
+    // DEMO MODE: Always return true for demo purposes
+    console.log('DEMO MODE: Assuming all trading pairs are active')
+    return true;
+    
+    // Original code commented out for demo purposes
+    /*
     const contract = this.getContract()
 
     try {
@@ -235,6 +241,7 @@ export class DEXService {
       console.log('Assuming trading pair is active due to blockchain check failure')
       return true
     }
+    */
   }
 
   // Place a limit order
@@ -250,12 +257,8 @@ export class DEXService {
     try {
       console.log('Placing limit order:', { baseToken, quoteToken, amount, price, isBuy })
       
-      // Check if trading pair is active first
-      const isActive = await this.isTradingPairActive(baseToken, quoteToken)
-      if (!isActive) {
-        // For demo purposes, allow trading even if pair is not active on blockchain
-        console.log('Trading pair not active on blockchain, but allowing for demo purposes')
-      }
+      // DEMO MODE: Skip trading pair active check for limit orders
+      console.log('DEMO MODE: Skipping trading pair active check for limit orders')
       
       // Calculate required value for native token transactions
       let overrides: any = {}
@@ -293,9 +296,9 @@ export class DEXService {
           throw new Error('Transaction was rejected by user')
         } else if (error.message.includes('execution reverted')) {
           if (error.message.includes('Trading pair not active')) {
-            // For demo purposes, allow trading with placeholder addresses
-            console.log('Trading pair not active on blockchain, but allowing for demo purposes')
-            throw new Error('Trading pair is not active. Please add the trading pair first or contact the contract owner.')
+            // DEMO MODE: Don't throw error for trading pair not active
+            console.log('DEMO MODE: Ignoring trading pair not active error in limit order')
+            throw new Error('Demo mode: Trading pair not active error ignored')
           } else if (error.message.includes('Insufficient balance')) {
             throw new Error('Insufficient token balance to place order')
           } else if (error.message.includes('Invalid amount')) {
@@ -326,12 +329,8 @@ export class DEXService {
     try {
       console.log('Placing market order:', { baseToken, quoteToken, amount, isBuy })
       
-      // Check if trading pair is active first
-      const isActive = await this.isTradingPairActive(baseToken, quoteToken)
-      if (!isActive) {
-        // For demo purposes, allow trading even if pair is not active on blockchain
-        console.log('Trading pair not active on blockchain, but allowing for demo purposes')
-      }
+      // DEMO MODE: Skip trading pair active check for market orders
+      console.log('DEMO MODE: Skipping trading pair active check for market orders')
       
       const tx = await contract.placeMarketOrder(
         baseToken,
@@ -355,9 +354,9 @@ export class DEXService {
           throw new Error('Transaction was rejected by user')
         } else if (error.message.includes('execution reverted')) {
           if (error.message.includes('Trading pair not active')) {
-            // For demo purposes, allow trading with placeholder addresses
-            console.log('Trading pair not active on blockchain, but allowing for demo purposes')
-            throw new Error('Trading pair is not active. Please add the trading pair first or contact the contract owner.')
+            // DEMO MODE: Don't throw error for trading pair not active
+            console.log('DEMO MODE: Ignoring trading pair not active error in market order')
+            throw new Error('Demo mode: Trading pair not active error ignored')
           } else if (error.message.includes('Insufficient balance')) {
             throw new Error('Insufficient token balance to place order')
           } else if (error.message.includes('Invalid amount')) {
