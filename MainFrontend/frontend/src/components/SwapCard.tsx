@@ -14,8 +14,8 @@ const SwapCard = () => {
   const [sellAmount, setSellAmount] = useState('0');
   const [buyAmount, setBuyAmount] = useState('0');
   const [sellToken, setSellToken] = useState<Token>({
-    symbol: 'ETH',
-    name: 'Ethereum',
+    symbol: 'MONAD',
+    name: 'Monad',
     address: '0x0000000000000000000000000000000000000000',
     logo: '🔷'
   });

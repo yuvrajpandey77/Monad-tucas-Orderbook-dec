@@ -30,7 +30,7 @@ echo "Price Precision: $PRICE_PRECISION"
 echo ""
 
 # Run the Rust CLI command to add trading pair
-cargo run --bin dex add-trading-pair \
+cargo run --bin monad-dex add-trading-pair \
     --address "$DEX_CONTRACT" \
     --base-token "$MONAD_TOKEN" \
     --quote-token "$ETH_TOKEN" \

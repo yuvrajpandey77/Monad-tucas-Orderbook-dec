@@ -38,7 +38,7 @@ const Index = () => {
           {/* Description */}
           <div className="text-center mt-12 max-w-2xl">
             <p className="text-lg text-muted-foreground mb-8">
-              The largest onchain marketplace. Buy and sell crypto on Ethereum and 12+ other chains.
+              The largest onchain marketplace. Buy and sell crypto on Monad and 12+ other chains.
             </p>
             
             {/* Trading Interface Link */}

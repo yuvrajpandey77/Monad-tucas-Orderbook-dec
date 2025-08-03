@@ -48,6 +48,14 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
     try {
       const tokenAddress = side === 'buy' ? selectedPair.quoteToken : selectedPair.baseToken
       const tokenService = createTokenService(tokenAddress)
+      
+      // Check if this is a native token
+      if (tokenAddress === '0x0000000000000000000000000000000000000000') {
+        console.log('Native token detected, skipping approval check')
+        setApprovalStatus('approved')
+        return
+      }
+      
       await tokenService.initialize(signer)
 
       const allowance = await tokenService.getAllowance(signer.address, dexService.contractAddress)
@@ -71,6 +79,18 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
     try {
       setIsApproving(true)
       const tokenAddress = side === 'buy' ? selectedPair.quoteToken : selectedPair.baseToken
+      
+      // Check if this is a native token
+      if (tokenAddress === '0x0000000000000000000000000000000000000000') {
+        console.log('Native token detected, skipping approval')
+        setApprovalStatus('approved')
+        toast({
+          title: "Native Token",
+          description: "Native tokens don't require approval",
+        })
+        return
+      }
+      
       const tokenService = createTokenService(tokenAddress)
       await tokenService.initialize(signer)
 
@@ -158,7 +178,22 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
       reset()
     } catch (error) {
       console.error('Order placement failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to place order'
+      let errorMessage = 'Failed to place order'
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Trading pair is not active')) {
+          errorMessage = 'Trading pair is not active. Please add the trading pair first or contact the contract owner.'
+        } else if (error.message.includes('Insufficient balance')) {
+          errorMessage = 'Insufficient token balance to place order'
+        } else if (error.message.includes('Invalid amount')) {
+          errorMessage = 'Invalid order amount. Please check your inputs.'
+        } else if (error.message.includes('Invalid price')) {
+          errorMessage = 'Invalid order price. Please check your inputs.'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
       setError(errorMessage)
       toast({
         title: "Order Failed",

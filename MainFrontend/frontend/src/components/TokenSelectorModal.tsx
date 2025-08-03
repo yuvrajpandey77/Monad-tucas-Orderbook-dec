@@ -15,8 +15,8 @@ interface Token {
 
 const popularTokens: Token[] = [
   {
-    symbol: 'ETH',
-    name: 'Ethereum',
+    symbol: 'MONAD',
+    name: 'Monad',
     address: '0x0000000000000000000000000000000000000000',
     logo: '🔷',
     volume: '$2.1B'

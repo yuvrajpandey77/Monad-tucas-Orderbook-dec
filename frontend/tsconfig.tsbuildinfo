@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/trading/order-book.tsx","./src/components/trading/order-form.tsx","./src/components/ui/button.tsx","./src/components/ui/card.tsx","./src/components/ui/input.tsx","./src/lib/utils.ts","./src/services/dex-service.ts","./src/store/dex-store.ts"],"version":"5.8.3"}
