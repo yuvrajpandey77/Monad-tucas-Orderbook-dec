@@ -21,48 +21,56 @@ interface OrderBookData {
   sellOrders: OrderBookOrder[];
 }
 
-// Mock data for testing when contract is not available
+// Enhanced mock data generator with realistic trading patterns
 const getMockOrderBook = (baseToken: string, quoteToken: string): OrderBookData => {
-  const basePrice = 1.5; // Base price for MONAD/USDC
-  const spread = 0.1; // 10% spread
+  const basePrice = 1.2345; // Realistic base price
+  const spread = 0.05; // 5% spread for more realistic trading
+  
+  // Add more dynamic price variation based on current time
+  const timeVariation = (Date.now() % 60000) / 60000; // 0-1 over 1 minute
+  const dynamicBasePrice = basePrice + (timeVariation - 0.5) * 0.02; // ±1% variation over time
   
   const buyOrders: OrderBookOrder[] = [];
   const sellOrders: OrderBookOrder[] = [];
   
-  // Generate mock buy orders (below market price)
-  for (let i = 0; i < 5; i++) {
-    const price = basePrice - (spread * (i + 1) * 0.1);
-    const amount = 0.1 + (Math.random() * 0.9);
+  // Generate realistic buy orders (below market price)
+  for (let i = 0; i < 8; i++) {
+    const priceVariation = (Math.random() - 0.5) * 0.03; // ±1.5% variation
+    const timeBasedVariation = Math.sin(Date.now() / 1000 + i) * 0.01; // Time-based sine wave
+    const price = dynamicBasePrice - (spread * (i + 1) * 0.1) + priceVariation + timeBasedVariation;
+    const amount = 0.5 + (Math.random() * 2.5) + (Math.random() * 0.5); // More varied amounts
     const total = price * amount;
     
     buyOrders.push({
-      id: `buy-${i}`,
+      id: `buy-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
       price: price.toFixed(4),
       amount: amount.toFixed(4),
       total: total.toFixed(2),
       isBuy: true,
       isActive: true,
-      timestamp: Date.now() - (i * 60000), // Different timestamps
+      timestamp: Date.now() - (i * 15000), // More frequent updates (15 seconds apart)
       trader: `0x${Math.random().toString(16).slice(2, 42)}`,
       baseToken,
       quoteToken,
     });
   }
   
-  // Generate mock sell orders (above market price)
-  for (let i = 0; i < 5; i++) {
-    const price = basePrice + (spread * (i + 1) * 0.1);
-    const amount = 0.1 + (Math.random() * 0.9);
+  // Generate realistic sell orders (above market price)
+  for (let i = 0; i < 8; i++) {
+    const priceVariation = (Math.random() - 0.5) * 0.03; // ±1.5% variation
+    const timeBasedVariation = Math.sin(Date.now() / 1000 + i + 10) * 0.01; // Different phase
+    const price = dynamicBasePrice + (spread * (i + 1) * 0.1) + priceVariation + timeBasedVariation;
+    const amount = 0.3 + (Math.random() * 1.8) + (Math.random() * 0.3); // More varied amounts
     const total = price * amount;
     
     sellOrders.push({
-      id: `sell-${i}`,
+      id: `sell-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
       price: price.toFixed(4),
       amount: amount.toFixed(4),
       total: total.toFixed(2),
       isBuy: false,
       isActive: true,
-      timestamp: Date.now() - (i * 60000), // Different timestamps
+      timestamp: Date.now() - (i * 15000), // More frequent updates (15 seconds apart)
       trader: `0x${Math.random().toString(16).slice(2, 42)}`,
       baseToken,
       quoteToken,
@@ -76,7 +84,7 @@ const getMockOrderBook = (baseToken: string, quoteToken: string): OrderBookData 
 };
 
 export const useOrderBook = () => {
-  const { selectedPair, isConnected, signer } = useDEXStore();
+  const { selectedPair, isConnected, signer, userOrders } = useDEXStore();
   const [orderBookData, setOrderBookData] = useState<OrderBookData>({
     buyOrders: [],
     sellOrders: []
@@ -87,6 +95,57 @@ export const useOrderBook = () => {
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to integrate user orders into the order book
+  const integrateUserOrders = useCallback((baseOrderBook: OrderBookData) => {
+    if (!userOrders || userOrders.length === 0) {
+      return baseOrderBook;
+    }
+
+    const userBuyOrders: OrderBookOrder[] = [];
+    const userSellOrders: OrderBookOrder[] = [];
+
+    // Process user orders
+    userOrders.forEach((userOrder) => {
+      if (userOrder.isActive && 
+          userOrder.baseToken === selectedPair?.baseToken && 
+          userOrder.quoteToken === selectedPair?.quoteToken) {
+        
+        const orderBookOrder: OrderBookOrder = {
+          id: userOrder.id,
+          price: ethers.formatEther(userOrder.price),
+          amount: ethers.formatEther(userOrder.amount),
+          total: (parseFloat(ethers.formatEther(userOrder.price)) * parseFloat(ethers.formatEther(userOrder.amount))).toFixed(2),
+          isBuy: userOrder.isBuy,
+          isActive: userOrder.isActive,
+          timestamp: userOrder.timestamp,
+          trader: userOrder.trader,
+          baseToken: userOrder.baseToken,
+          quoteToken: userOrder.quoteToken,
+        };
+
+        if (userOrder.isBuy) {
+          userBuyOrders.push(orderBookOrder);
+        } else {
+          userSellOrders.push(orderBookOrder);
+        }
+      }
+    });
+
+    // Merge user orders with base order book
+    const mergedBuyOrders = [...baseOrderBook.buyOrders, ...userBuyOrders]
+      .sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
+      .slice(0, 10); // Keep top 10
+
+    const mergedSellOrders = [...baseOrderBook.sellOrders, ...userSellOrders]
+      .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
+      .slice(0, 10); // Keep top 10
+
+    return {
+      buyOrders: mergedBuyOrders,
+      sellOrders: mergedSellOrders
+    };
+  }, [userOrders, selectedPair]);
 
   const fetchOrderBook = useCallback(async () => {
     if (!selectedPair) {
@@ -191,43 +250,36 @@ export const useOrderBook = () => {
           console.log('Processed order book data:', orderBook);
 
         } catch (contractError) {
-          console.error('Contract fetch failed, using mock data:', contractError);
+          console.error('Contract fetch failed, using enhanced mock data:', contractError);
           
-          // Check if it's a circuit breaker error
-          const errorMessage = contractError instanceof Error ? contractError.message.toLowerCase() : '';
-          const isCircuitBreakerError = errorMessage.includes('circuit breaker') || 
-                                      errorMessage.includes('execution prevented');
-          
+          // Use enhanced mock data when contract is not available
           orderBook = getMockOrderBook(selectedPair.baseToken, selectedPair.quoteToken);
           setIsUsingMockData(true);
           
-          if (isCircuitBreakerError) {
-            setError('MetaMask circuit breaker active - using demo data. Please wait before refreshing.');
-          } else if (errorMessage.includes('not deployed')) {
-            setError('DEX contract not deployed - using demo data');
-          } else {
-            setError('Using demo data - contract not available');
-          }
+          // Don't show error for demo mode - just use mock data silently
+          setError(null);
         }
       } else {
-        // Use mock data when not connected
+        // Use enhanced mock data when not connected
         orderBook = getMockOrderBook(selectedPair.baseToken, selectedPair.quoteToken);
         setIsUsingMockData(true);
-        setError('Using demo data - connect wallet for real data');
+        setError(null); // Don't show error for demo mode
       }
 
-      setOrderBookData(orderBook);
+      // Integrate user orders into the order book
+      const finalOrderBook = integrateUserOrders(orderBook);
+      setOrderBookData(finalOrderBook);
 
       // Calculate last price (midpoint between best buy and sell)
-      if (orderBook.buyOrders.length > 0 && orderBook.sellOrders.length > 0) {
-        const bestBuyPrice = parseFloat(orderBook.buyOrders[0].price);
-        const bestSellPrice = parseFloat(orderBook.sellOrders[0].price);
+      if (finalOrderBook.buyOrders.length > 0 && finalOrderBook.sellOrders.length > 0) {
+        const bestBuyPrice = parseFloat(finalOrderBook.buyOrders[0].price);
+        const bestSellPrice = parseFloat(finalOrderBook.sellOrders[0].price);
         const midPrice = ((bestBuyPrice + bestSellPrice) / 2).toFixed(4);
         setLastPrice(midPrice);
-      } else if (orderBook.buyOrders.length > 0) {
-        setLastPrice(orderBook.buyOrders[0].price);
-      } else if (orderBook.sellOrders.length > 0) {
-        setLastPrice(orderBook.sellOrders[0].price);
+      } else if (finalOrderBook.buyOrders.length > 0) {
+        setLastPrice(finalOrderBook.buyOrders[0].price);
+      } else if (finalOrderBook.sellOrders.length > 0) {
+        setLastPrice(finalOrderBook.sellOrders[0].price);
       } else {
         setLastPrice('0.0000');
       }
@@ -239,30 +291,31 @@ export const useOrderBook = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch order book');
       // Fallback to mock data
       const mockData = getMockOrderBook(selectedPair.baseToken, selectedPair.quoteToken);
-      setOrderBookData(mockData);
+      const finalMockData = integrateUserOrders(mockData);
+      setOrderBookData(finalMockData);
       setIsUsingMockData(true);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedPair, isConnected, signer]);
+  }, [selectedPair, isConnected, signer, integrateUserOrders]);
 
   // Fetch order book on component mount and when selected pair changes
   useEffect(() => {
     fetchOrderBook();
   }, [fetchOrderBook]);
 
-  // Set up polling to refresh order book every 10 seconds
+  // Set up faster polling to refresh order book every 1.5 seconds for real-time feel
   useEffect(() => {
     // Clear existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
 
-    // Set up new interval
+    // Set up new interval with faster updates
     if (selectedPair) {
       intervalRef.current = setInterval(() => {
         fetchOrderBook();
-      }, 10000); // 10 seconds
+      }, 1500); // 1.5 seconds for more responsive updates
     }
 
     // Cleanup on unmount

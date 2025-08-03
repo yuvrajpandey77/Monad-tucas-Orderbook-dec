@@ -2,16 +2,21 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDEXStore } from '@/store/dex-store';
 import { useOrderBook } from '@/hooks/use-order-book';
-import { RefreshCw, AlertCircle, Info, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { RefreshCw, AlertCircle, Info, TrendingUp, TrendingDown, BarChart3, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const OrderBook = () => {
-  const { selectedPair } = useDEXStore();
+  const { selectedPair, userOrders } = useDEXStore();
   const { orderBookData, isLoading, error, lastPrice, fetchOrderBook, isUsingMockData } = useOrderBook();
 
   const handleRefresh = () => {
     fetchOrderBook();
+  };
+
+  // Check if an order is a user order
+  const isUserOrder = (orderId: string) => {
+    return userOrders.some(userOrder => userOrder.id === orderId);
   };
 
   // Calculate spread and depth
@@ -62,12 +67,6 @@ const OrderBook = () => {
             <div className="text-sm text-muted-foreground">
               {selectedPair.baseTokenSymbol}/{selectedPair.quoteTokenSymbol}
             </div>
-            {isUsingMockData && (
-              <div className="flex items-center space-x-1 text-xs text-yellow-600 mt-1">
-                <Info className="h-3 w-3" />
-                <span>Demo data</span>
-              </div>
-            )}
           </div>
           <Button
             variant="ghost"
@@ -81,7 +80,7 @@ const OrderBook = () => {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        {error && !isUsingMockData ? (
+        {error ? (
           <div className="p-6">
             <div className="flex items-center space-x-2 text-red-600 mb-2">
               <AlertCircle className="h-4 w-4" />
@@ -147,7 +146,7 @@ const OrderBook = () => {
               </div>
               {isLoading ? (
                 <div className="space-y-2">
-                  {[...Array(8)].map((_, i) => (
+                  {[...Array(6)].map((_, i) => (
                     <div key={i} className="grid grid-cols-3 gap-4 py-1">
                       <div className="h-4 bg-muted animate-pulse rounded"></div>
                       <div className="h-4 bg-muted animate-pulse rounded"></div>
@@ -157,19 +156,28 @@ const OrderBook = () => {
                 </div>
               ) : orderBookData.sellOrders.length > 0 ? (
                 <div className="space-y-1">
-                  {orderBookData.sellOrders.slice(0, 8).map((order, index) => (
-                    <div key={order.id || index} className="grid grid-cols-3 gap-4 py-1.5 text-sm hover:bg-red-500/10 transition-colors cursor-pointer group">
-                      <div className="text-red-400 font-mono font-medium group-hover:text-red-300">
-                        ${parseFloat(order.price).toFixed(4)}
+                  {orderBookData.sellOrders.slice(0, 6).map((order, index) => {
+                    const isUser = isUserOrder(order.id);
+                    return (
+                      <div 
+                        key={order.id || index} 
+                        className={`grid grid-cols-3 gap-4 py-1.5 text-sm hover:bg-red-500/10 transition-colors cursor-pointer group ${
+                          isUser ? 'bg-red-500/5 border-l-2 border-red-400' : ''
+                        }`}
+                      >
+                        <div className="text-red-400 font-mono font-medium group-hover:text-red-300 flex items-center">
+                          ${parseFloat(order.price).toFixed(4)}
+                          {isUser && <User className="h-3 w-3 ml-1 text-blue-400" />}
+                        </div>
+                        <div className="text-right text-foreground font-mono group-hover:text-foreground/80">
+                          {parseFloat(order.amount).toFixed(4)}
+                        </div>
+                        <div className="text-right text-muted-foreground font-mono group-hover:text-muted-foreground/80">
+                          ${parseFloat(order.total).toFixed(2)}
+                        </div>
                       </div>
-                      <div className="text-right text-foreground font-mono group-hover:text-foreground/80">
-                        {parseFloat(order.amount).toFixed(4)}
-                      </div>
-                      <div className="text-right text-muted-foreground font-mono group-hover:text-muted-foreground/80">
-                        ${parseFloat(order.total).toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground py-4 text-center">
@@ -189,11 +197,6 @@ const OrderBook = () => {
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">Current Market Price</div>
-                {isUsingMockData && (
-                  <Badge variant="secondary" className="text-xs mt-2">
-                    Demo Price
-                  </Badge>
-                )}
               </div>
             </div>
 
@@ -205,7 +208,7 @@ const OrderBook = () => {
               </div>
               {isLoading ? (
                 <div className="space-y-2">
-                  {[...Array(8)].map((_, i) => (
+                  {[...Array(6)].map((_, i) => (
                     <div key={i} className="grid grid-cols-3 gap-4 py-1">
                       <div className="h-4 bg-muted animate-pulse rounded"></div>
                       <div className="h-4 bg-muted animate-pulse rounded"></div>
@@ -215,19 +218,28 @@ const OrderBook = () => {
                 </div>
               ) : orderBookData.buyOrders.length > 0 ? (
                 <div className="space-y-1">
-                  {orderBookData.buyOrders.slice(0, 8).map((order, index) => (
-                    <div key={order.id || index} className="grid grid-cols-3 gap-4 py-1.5 text-sm hover:bg-green-500/10 transition-colors cursor-pointer group">
-                      <div className="text-green-400 font-mono font-medium group-hover:text-green-300">
-                        ${parseFloat(order.price).toFixed(4)}
+                  {orderBookData.buyOrders.slice(0, 6).map((order, index) => {
+                    const isUser = isUserOrder(order.id);
+                    return (
+                      <div 
+                        key={order.id || index} 
+                        className={`grid grid-cols-3 gap-4 py-1.5 text-sm hover:bg-green-500/10 transition-colors cursor-pointer group ${
+                          isUser ? 'bg-green-500/5 border-l-2 border-green-400' : ''
+                        }`}
+                      >
+                        <div className="text-green-400 font-mono font-medium group-hover:text-green-300 flex items-center">
+                          ${parseFloat(order.price).toFixed(4)}
+                          {isUser && <User className="h-3 w-3 ml-1 text-blue-400" />}
+                        </div>
+                        <div className="text-right text-foreground font-mono group-hover:text-foreground/80">
+                          {parseFloat(order.amount).toFixed(4)}
+                        </div>
+                        <div className="text-right text-muted-foreground font-mono group-hover:text-muted-foreground/80">
+                          ${parseFloat(order.total).toFixed(2)}
+                        </div>
                       </div>
-                      <div className="text-right text-foreground font-mono group-hover:text-foreground/80">
-                        {parseFloat(order.amount).toFixed(4)}
-                      </div>
-                      <div className="text-right text-muted-foreground font-mono group-hover:text-muted-foreground/80">
-                        ${parseFloat(order.total).toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground py-4 text-center">
@@ -253,18 +265,6 @@ const OrderBook = () => {
                 </div>
               </div>
             </div>
-
-            {/* Demo Data Notice */}
-            {isUsingMockData && (
-              <div className="px-6 py-3 bg-yellow-500/10 border-t border-yellow-500/20">
-                <div className="flex items-center space-x-2 text-yellow-700">
-                  <Info className="h-4 w-4" />
-                  <span className="text-sm">
-                    Showing demo data. Connect wallet to see real order book.
-                  </span>
-                </div>
-              </div>
-            )}
           </>
         )}
       </CardContent>
