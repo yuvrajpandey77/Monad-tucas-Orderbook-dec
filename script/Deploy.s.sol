@@ -2,20 +2,21 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Script.sol";
-import "../contracts/MonadToken.sol";
 import "../contracts/OrderBookDEX.sol";
 
 contract DeployScript is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // Use the private key directly from environment
+        string memory privateKey = vm.envString("PRIVATE_KEY");
+        // Add 0x prefix if not present
+        if (bytes(privateKey)[0] != 0x30) { // Check if it doesn't start with '0'
+            privateKey = string(abi.encodePacked("0x", privateKey));
+        }
+        uint256 deployerPrivateKey = vm.parseUint(privateKey);
         
         vm.startBroadcast(deployerPrivateKey);
         
-        // Deploy MonadToken
-        MonadToken token = new MonadToken();
-        console.log("MonadToken deployed at:", address(token));
-        
-        // Deploy OrderBookDEX
+        // Deploy OrderBookDEX only (using native MONAD)
         OrderBookDEX dex = new OrderBookDEX();
         console.log("OrderBookDEX deployed at:", address(dex));
         
@@ -23,8 +24,8 @@ contract DeployScript is Script {
         
         // Save deployment addresses
         string memory deploymentInfo = string(abi.encodePacked(
-            "MonadToken: ", vm.toString(address(token)), "\n",
-            "OrderBookDEX: ", vm.toString(address(dex)), "\n"
+            "OrderBookDEX: ", vm.toString(address(dex)), "\n",
+            "Native Token: 0x0000000000000000000000000000000000000000", "\n"
         ));
         
         vm.writeFile("deployment.txt", deploymentInfo);

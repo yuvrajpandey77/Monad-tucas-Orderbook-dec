@@ -222,12 +222,24 @@ export class DEXService {
         throw new Error('Trading pair is not active. Please add the trading pair first or contact the contract owner.')
       }
       
+      // Calculate required value for native token transactions
+      let overrides: any = {}
+      if (isBuy && quoteToken === '0x0000000000000000000000000000000000000000') {
+        // Buy order with native token (MONAD) as quote
+        const quoteAmount = (BigInt(amount) * BigInt(price)) / BigInt(10 ** 18)
+        overrides.value = quoteAmount
+      } else if (!isBuy && baseToken === '0x0000000000000000000000000000000000000000') {
+        // Sell order with native token (MONAD) as base
+        overrides.value = BigInt(amount)
+      }
+      
       const tx = await contract.placeLimitOrder(
         baseToken,
         quoteToken,
         amount,
         price,
-        isBuy
+        isBuy,
+        overrides
       )
       
       console.log('Limit order transaction sent:', tx.hash)
@@ -253,6 +265,8 @@ export class DEXService {
             throw new Error('Invalid order amount. Please check your inputs.')
           } else if (error.message.includes('Invalid price')) {
             throw new Error('Invalid order price. Please check your inputs.')
+          } else if (error.message.includes('Insufficient native token sent')) {
+            throw new Error('Insufficient native MONAD sent. Please include enough MONAD for the transaction.')
           } else {
             throw new Error('Order placement failed. Please check your inputs and try again.')
           }

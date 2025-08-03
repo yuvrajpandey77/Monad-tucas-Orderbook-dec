@@ -106,8 +106,8 @@ const TradingPairManager = () => {
       // For now, we'll use predefined pairs since the contract doesn't have a view function for all pairs
       const predefinedPairs: TradingPair[] = [
         {
-          baseToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
-          quoteToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // Using same token for demo
+                  baseToken: '0x0000000000000000000000000000000000000000', // Native MONAD
+        quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
           baseTokenSymbol: 'MONAD',
           quoteTokenSymbol: 'MONAD',
           minOrderSize: '1.0',

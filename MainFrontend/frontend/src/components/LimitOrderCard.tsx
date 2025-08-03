@@ -34,11 +34,17 @@ const LimitOrderCard = () => {
     
     if (isNaN(from) || isNaN(price) || price <= 0) return null;
     
+    // For buy orders: fromAmount is quote token (USDC), toAmount is base token (MONAD)
+    // For sell orders: fromAmount is base token (MONAD), toAmount is quote token (USDC)
+    const estimatedReceive = (from / price).toFixed(6);
+    const totalValue = from.toFixed(2);
+    const fee = (from * 0.003).toFixed(4); // 0.3% trading fee
+    
     return {
-      estimatedReceive: (from / price).toFixed(6),
-      totalValue: from.toFixed(2),
+      estimatedReceive,
+      totalValue,
       priceImpact: '0.01%', // Mock value
-      fee: (from * 0.001).toFixed(4), // 0.1% fee
+      fee,
     };
   };
 
@@ -69,16 +75,18 @@ const LimitOrderCard = () => {
       // Calculate required approval amount (quote token for buy orders)
       const requiredAmount = ethers.parseEther(fromAmount).toString();
       
-      // Ensure tokens are approved for trading
-      const isApproved = await ensureApproval(selectedPair.quoteToken, requiredAmount);
-      
-      if (!isApproved) {
-        toast({
-          title: "Approval Required",
-          description: "Please approve tokens before placing your order.",
-          variant: "destructive",
-        });
-        return;
+      // Ensure tokens are approved for trading (skip for native tokens)
+      if (selectedPair.quoteToken !== '0x0000000000000000000000000000000000000000') {
+        const isApproved = await ensureApproval(selectedPair.quoteToken, requiredAmount);
+        
+        if (!isApproved) {
+          toast({
+            title: "Approval Required",
+            description: "Please approve tokens before placing your order.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       // Initialize DEX service
@@ -144,16 +152,18 @@ const LimitOrderCard = () => {
       // Calculate required approval amount (base token for sell orders)
       const requiredAmount = ethers.parseEther(fromAmount).toString();
       
-      // Ensure tokens are approved for trading
-      const isApproved = await ensureApproval(selectedPair.baseToken, requiredAmount);
-      
-      if (!isApproved) {
-        toast({
-          title: "Approval Required",
-          description: "Please approve tokens before placing your order.",
-          variant: "destructive",
-        });
-        return;
+      // Ensure tokens are approved for trading (skip for native tokens)
+      if (selectedPair.baseToken !== '0x0000000000000000000000000000000000000000') {
+        const isApproved = await ensureApproval(selectedPair.baseToken, requiredAmount);
+        
+        if (!isApproved) {
+          toast({
+            title: "Approval Required",
+            description: "Please approve tokens before placing your order.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       // Initialize DEX service
@@ -338,7 +348,7 @@ const LimitOrderCard = () => {
                     <p className="font-semibold text-green-400">{estimatedValues.priceImpact}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Fee</p>
+                    <p className="text-muted-foreground">Fee (0.3%)</p>
                     <p className="font-semibold text-foreground">${estimatedValues.fee}</p>
                   </div>
                 </div>
@@ -514,7 +524,7 @@ const LimitOrderCard = () => {
                     <p className="font-semibold text-red-400">{estimatedValues.priceImpact}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Fee</p>
+                    <p className="text-muted-foreground">Fee (0.3%)</p>
                     <p className="font-semibold text-foreground">${estimatedValues.fee}</p>
                   </div>
                 </div>

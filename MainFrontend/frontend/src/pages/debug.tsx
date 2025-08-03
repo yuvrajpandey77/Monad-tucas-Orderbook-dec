@@ -27,11 +27,11 @@ export default function DebugPage() {
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="font-medium">Token Contract:</span>
-                <span className="text-muted-foreground text-xs font-mono">0x14F49BedD983423198d5402334dbccD9c45AC767</span>
+                <span className="text-muted-foreground text-xs font-mono">0x0000000000000000000000000000000000000000</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/50">
                 <span className="font-medium">DEX Contract:</span>
-                <span className="text-muted-foreground text-xs font-mono">0x6045fe7667E22CE9ff8106429128DDdC90F6F9Ae</span>
+                <span className="text-muted-foreground text-xs font-mono">0x39DC69400B5A2eC3DC2b13fDd1D8c7f78b3D573e</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="font-medium">Explorer:</span>

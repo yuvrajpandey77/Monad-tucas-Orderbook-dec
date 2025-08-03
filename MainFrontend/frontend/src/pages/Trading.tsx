@@ -29,7 +29,7 @@ function TradingInterface() {
   // Trading pairs using deployed contracts
   const mockTradingPairs = React.useMemo(() => [
     {
-      baseToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MonadToken (deployed)
+              baseToken: '0x0000000000000000000000000000000000000000', // Native MONAD
       quoteToken: '0x0000000000000000000000000000000000000000', // MONAD (native)
       baseTokenSymbol: 'MONAD',
       quoteTokenSymbol: 'MONAD',

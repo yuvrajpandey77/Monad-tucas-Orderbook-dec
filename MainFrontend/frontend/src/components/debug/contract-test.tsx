@@ -35,8 +35,8 @@ export function ContractTest() {
 
       // Test 4: Test token contract
       const tokenContract = new ethers.Contract(
-        CONTRACTS.MONAD_TOKEN.address,
-        CONTRACTS.MONAD_TOKEN.abi,
+        CONTRACTS.ORDERBOOK_DEX.address,
+        CONTRACTS.ORDERBOOK_DEX.abi,
         provider
       )
 
@@ -106,7 +106,7 @@ export function ContractTest() {
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Token Contract:</span>
-            <span className="text-xs font-mono break-all">{CONTRACTS.MONAD_TOKEN.address}</span>
+            <span className="text-xs font-mono break-all">{CONTRACTS.ORDERBOOK_DEX.address}</span>
           </div>
           <div className="flex justify-between">
             <span className="font-medium">DEX Contract:</span>

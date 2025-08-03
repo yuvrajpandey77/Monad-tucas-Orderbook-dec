@@ -103,25 +103,25 @@ export function UserBalance() {
       }
       
       // Test 4: Check if MONAD token contract exists
-      const monadTokenAddress = '0x14F49BedD983423198d5402334dbccD9c45AC767'
+      const nativeTokenAddress = '0x0000000000000000000000000000000000000000'
       if (provider) {
-        const code = await provider.getCode(monadTokenAddress)
-        console.log('MONAD token contract exists:', code !== '0x')
+        const code = await provider.getCode(nativeTokenAddress)
+        console.log('Native token contract exists:', code !== '0x')
       }
       
-      // Test 5: Try to get MONAD token balance directly
+      // Test 5: Try to get native token balance directly
       try {
-        const monadBalance = await tokenService.getTokenBalance(monadTokenAddress, address)
-        console.log('MONAD token balance:', monadBalance)
+        const nativeBalance = await tokenService.getTokenBalance(nativeTokenAddress, address)
+        console.log('Native token balance:', nativeBalance)
       } catch (error) {
-        console.error('Failed to get MONAD token balance:', error)
+        console.error('Failed to get native token balance:', error)
       }
       
       setDebugInfo({
         provider: !!provider,
         network: provider ? await provider.getNetwork() : null,
         nativeBalance: provider ? await provider.getBalance(address) : null,
-        monadTokenExists: provider ? await provider.getCode(monadTokenAddress) !== '0x' : null,
+        nativeTokenExists: provider ? await provider.getCode(nativeTokenAddress) !== '0x' : null,
         timestamp: new Date().toISOString()
       })
       
@@ -202,7 +202,7 @@ export function UserBalance() {
               <div>Provider: {debugInfo.provider ? 'Available' : 'Not Available'}</div>
               <div>Network: {debugInfo.network?.name} (Chain ID: {debugInfo.network?.chainId})</div>
               <div>Native Balance: {debugInfo.nativeBalance ? ethers.formatEther(debugInfo.nativeBalance) : 'N/A'}</div>
-              <div>MONAD Token Exists: {debugInfo.monadTokenExists ? 'Yes' : 'No'}</div>
+              <div>Native Token Exists: {debugInfo.nativeTokenExists ? 'Yes' : 'No'}</div>
               <div>Timestamp: {debugInfo.timestamp}</div>
             </div>
           </div>

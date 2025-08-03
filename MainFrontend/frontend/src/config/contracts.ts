@@ -1,26 +1,8 @@
-import { CONTRACT_ADDRESSES } from './network'
-
 // Contract ABIs
-export const MONAD_TOKEN_ABI = [
-  'function name() view returns (string)',
-  'function symbol() view returns (string)',
-  'function decimals() view returns (uint8)',
-  'function totalSupply() view returns (uint256)',
-  'function balanceOf(address) view returns (uint256)',
-  'function transfer(address to, uint256 amount) returns (bool)',
-  'function approve(address spender, uint256 amount) returns (bool)',
-  'function allowance(address owner, address spender) view returns (uint256)',
-  'function mint(address to, uint256 amount)',
-  'function publicMint()',
-  'function burn(uint256 amount)',
-  'function getTokenInfo() view returns (string, string, uint256, uint8)',
-  'function getBalance(address account) view returns (uint256)',
-]
-
 export const ORDERBOOK_DEX_ABI = [
   'function addTradingPair(address baseToken, address quoteToken, uint256 minOrderSize, uint256 pricePrecision) external',
-  'function placeLimitOrder(address baseToken, address quoteToken, uint256 amount, uint256 price, bool isBuy) external returns (uint256)',
-  'function placeMarketOrder(address baseToken, address quoteToken, uint256 amount, bool isBuy) external',
+  'function placeLimitOrder(address baseToken, address quoteToken, uint256 amount, uint256 price, bool isBuy) external payable returns (uint256)',
+  'function placeMarketOrder(address baseToken, address quoteToken, uint256 amount, bool isBuy) external payable',
   'function cancelOrder(uint256 orderId) external',
   'function getOrderBook(address baseToken, address quoteToken) external view returns (uint256[], uint256[], uint256[], uint256[])',
   'function getUserOrders(address user) external view returns (uint256[])',
@@ -28,15 +10,47 @@ export const ORDERBOOK_DEX_ABI = [
   'function withdraw(address token, uint256 amount) external',
   'function tradingPairs(address, address) external view returns (address, address, bool, uint256, uint256)',
   'function orders(uint256) external view returns (uint256, address, address, address, uint256, uint256, bool, bool, uint256)',
+  'function isTradingPairActive(address baseToken, address quoteToken) external view returns (bool)',
+  'function owner() external view returns (address)',
+  'function transferOwnership(address newOwner) external',
+  'function renounceOwnership() external',
+  'function balances(address, address) external view returns (uint256)',
+  'function userOrders(address, uint256) external view returns (uint256)',
+  'function FEE_DENOMINATOR() external view returns (uint256)',
+  'function TRADING_FEE() external view returns (uint256)',
+  'function LIQUIDITY_FEE() external view returns (uint256)',
+  'function NATIVE_TOKEN() external view returns (address)',
+  // Events
+  'event OrderPlaced(uint256 indexed orderId, address indexed trader, address baseToken, address quoteToken, uint256 amount, uint256 price, bool isBuy)',
+  'event OrderMatched(uint256 indexed buyOrderId, uint256 indexed sellOrderId, address baseToken, address quoteToken, uint256 amount, uint256 price)',
+  'event OrderCancelled(uint256 indexed orderId, address indexed trader)',
+  'event TradingPairAdded(address indexed baseToken, address indexed quoteToken, uint256 minOrderSize)',
+  'event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)',
+  'event LiquidityAdded(address indexed provider, address baseToken, address quoteToken, uint256 baseAmount, uint256 quoteAmount)',
+  'event LiquidityRemoved(address indexed provider, address baseToken, address quoteToken, uint256 baseAmount, uint256 quoteAmount)',
 ]
 
 export const CONTRACTS = {
-  MONAD_TOKEN: {
-    address: CONTRACT_ADDRESSES.MONAD_TOKEN,
-    abi: MONAD_TOKEN_ABI,
-  },
   ORDERBOOK_DEX: {
-    address: CONTRACT_ADDRESSES.ORDERBOOK_DEX,
-    abi: ORDERBOOK_DEX_ABI,
+    address: '0x39DC69400B5A2eC3DC2b13fDd1D8c7f78b3D573e',
+    abi: ORDERBOOK_DEX_ABI
+  }
+} as const;
+
+export const NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
+
+export const RPC_URL = 'https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe';
+export const CHAIN_ID = 10143;
+
+// Network configuration
+export const NETWORK_CONFIG = {
+  chainId: CHAIN_ID,
+  rpcUrl: RPC_URL,
+  name: 'Monad Testnet',
+  nativeCurrency: {
+    name: 'MONAD',
+    symbol: 'MONAD',
+    decimals: 18,
   },
-} 
+  blockExplorerUrls: ['https://explorer.testnet.monad.xyz'],
+} as const; 

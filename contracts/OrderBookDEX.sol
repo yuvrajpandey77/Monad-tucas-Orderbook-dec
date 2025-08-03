@@ -52,6 +52,9 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
     uint256 public constant TRADING_FEE = 30; // 0.3%
     uint256 public constant LIQUIDITY_FEE = 25; // 0.25%
     
+    // Native token address
+    address public constant NATIVE_TOKEN = address(0);
+    
     constructor() Ownable(msg.sender) {}
     
     /**
@@ -64,7 +67,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 pricePrecision
     ) external onlyOwner {
         require(baseToken != quoteToken, "Tokens must be different");
-        require(baseToken != address(0) && quoteToken != address(0), "Invalid token addresses");
+        require(baseToken != address(0) || quoteToken != address(0), "At least one token must be non-zero");
         
         tradingPairs[baseToken][quoteToken] = TradingPair({
             baseToken: baseToken,
@@ -86,7 +89,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 amount,
         uint256 price,
         bool isBuy
-    ) external nonReentrant returns (uint256 orderId) {
+    ) external payable nonReentrant returns (uint256 orderId) {
         TradingPair memory pair = tradingPairs[baseToken][quoteToken];
         require(pair.isActive, "Trading pair not active");
         require(amount >= pair.minOrderSize, "Order size too small");
@@ -95,11 +98,26 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         // Transfer tokens from trader
         if (isBuy) {
             uint256 quoteAmount = (amount * price) / pair.pricePrecision;
-            IERC20(quoteToken).transferFrom(msg.sender, address(this), quoteAmount);
-            balances[msg.sender][quoteToken] += quoteAmount;
+            
+            if (quoteToken == NATIVE_TOKEN) {
+                // Handle native token (MONAD)
+                require(msg.value >= quoteAmount, "Insufficient native token sent");
+                balances[msg.sender][quoteToken] += quoteAmount;
+            } else {
+                // Handle ERC-20 tokens
+                IERC20(quoteToken).transferFrom(msg.sender, address(this), quoteAmount);
+                balances[msg.sender][quoteToken] += quoteAmount;
+            }
         } else {
-            IERC20(baseToken).transferFrom(msg.sender, address(this), amount);
-            balances[msg.sender][baseToken] += amount;
+            if (baseToken == NATIVE_TOKEN) {
+                // Handle native token (MONAD)
+                require(msg.value >= amount, "Insufficient native token sent");
+                balances[msg.sender][baseToken] += amount;
+            } else {
+                // Handle ERC-20 tokens
+                IERC20(baseToken).transferFrom(msg.sender, address(this), amount);
+                balances[msg.sender][baseToken] += amount;
+            }
         }
         
         // Create order
@@ -134,7 +152,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         address quoteToken,
         uint256 amount,
         bool isBuy
-    ) external nonReentrant {
+    ) external payable nonReentrant {
         TradingPair memory pair = tradingPairs[baseToken][quoteToken];
         require(pair.isActive, "Trading pair not active");
         require(amount >= pair.minOrderSize, "Order size too small");
@@ -162,10 +180,26 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         if (order.isBuy) {
             uint256 quoteAmount = (order.amount * order.price) / tradingPairs[order.baseToken][order.quoteToken].pricePrecision;
             balances[msg.sender][order.quoteToken] -= quoteAmount;
-            IERC20(order.quoteToken).transfer(msg.sender, quoteAmount);
+            
+            if (order.quoteToken == NATIVE_TOKEN) {
+                // Return native tokens
+                (bool success, ) = payable(msg.sender).call{value: quoteAmount}("");
+                require(success, "Failed to return native tokens");
+            } else {
+                // Return ERC-20 tokens
+                IERC20(order.quoteToken).transfer(msg.sender, quoteAmount);
+            }
         } else {
             balances[msg.sender][order.baseToken] -= order.amount;
-            IERC20(order.baseToken).transfer(msg.sender, order.amount);
+            
+            if (order.baseToken == NATIVE_TOKEN) {
+                // Return native tokens
+                (bool success, ) = payable(msg.sender).call{value: order.amount}("");
+                require(success, "Failed to return native tokens");
+            } else {
+                // Return ERC-20 tokens
+                IERC20(order.baseToken).transfer(msg.sender, order.amount);
+            }
         }
         
         emit OrderCancelled(orderId, msg.sender);
@@ -180,11 +214,10 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256[] memory sellPrices,
         uint256[] memory sellAmounts
     ) {
-        // This is a simplified version - in production you'd want more efficient data structures
+        // Count orders first
         uint256 buyCount = 0;
         uint256 sellCount = 0;
         
-        // Count orders
         for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
@@ -195,6 +228,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
             }
         }
         
+        // Initialize arrays
         buyPrices = new uint256[](buyCount);
         buyAmounts = new uint256[](buyCount);
         sellPrices = new uint256[](sellCount);
@@ -203,6 +237,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 buyIndex = 0;
         uint256 sellIndex = 0;
         
+        // Fill arrays
         for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
@@ -252,13 +287,12 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
      * @dev Internal function to try matching orders
      */
     function _tryMatchOrders(address baseToken, address quoteToken) internal {
-        // Simplified matching logic - in production you'd want more sophisticated matching
-        uint256 bestBuyPrice = 0;
-        uint256 bestSellPrice = type(uint256).max;
+        // Find best buy and sell orders
         uint256 bestBuyOrderId = 0;
         uint256 bestSellOrderId = 0;
+        uint256 bestBuyPrice = 0;
+        uint256 bestSellPrice = type(uint256).max;
         
-        // Find best buy and sell orders
         for (uint256 i = 0; i < _orderIdCounter; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
@@ -275,7 +309,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
             }
         }
         
-        // Match if possible
+        // Match if possible (buy price >= sell price)
         if (bestBuyPrice >= bestSellPrice && bestBuyOrderId != 0 && bestSellOrderId != 0) {
             _executeMatch(bestBuyOrderId, bestSellOrderId);
         }
@@ -288,6 +322,9 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         Order storage buyOrder = orders[buyOrderId];
         Order storage sellOrder = orders[sellOrderId];
         
+        require(buyOrder.isActive && sellOrder.isActive, "Orders not active");
+        require(buyOrder.isBuy && !sellOrder.isBuy, "Invalid order types");
+        
         uint256 matchAmount = buyOrder.amount < sellOrder.amount ? buyOrder.amount : sellOrder.amount;
         uint256 matchPrice = (buyOrder.price + sellOrder.price) / 2; // Average price
         
@@ -296,7 +333,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         uint256 baseAmount = matchAmount - tradingFee;
         uint256 quoteAmount = (baseAmount * matchPrice) / tradingPairs[buyOrder.baseToken][buyOrder.quoteToken].pricePrecision;
         
-        // Transfer tokens
+        // Transfer tokens between traders
         balances[buyOrder.trader][buyOrder.baseToken] += baseAmount;
         balances[sellOrder.trader][buyOrder.quoteToken] += quoteAmount;
         
@@ -304,6 +341,7 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
         buyOrder.amount -= matchAmount;
         sellOrder.amount -= matchAmount;
         
+        // Deactivate orders if fully filled
         if (buyOrder.amount == 0) buyOrder.isActive = false;
         if (sellOrder.amount == 0) sellOrder.isActive = false;
         
@@ -314,10 +352,10 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
      * @dev Execute market buy
      */
     function _executeMarketBuy(address baseToken, address quoteToken, uint256 amount) internal {
-        // Simplified market buy - find best sell orders and execute
         uint256 remainingAmount = amount;
         uint256 totalCost = 0;
         
+        // Find sell orders and execute
         for (uint256 i = 0; i < _orderIdCounter && remainingAmount > 0; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
@@ -330,13 +368,22 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
                 
                 totalCost += cost;
                 remainingAmount -= matchAmount;
+                
+                // Update order
+                orders[i].amount -= matchAmount;
+                if (orders[i].amount == 0) orders[i].isActive = false;
             }
         }
         
         require(remainingAmount == 0, "Insufficient liquidity");
         
         // Transfer quote tokens from buyer
-        IERC20(quoteToken).transferFrom(msg.sender, address(this), totalCost);
+        if (quoteToken == NATIVE_TOKEN) {
+            require(msg.value >= totalCost, "Insufficient native token sent");
+        } else {
+            IERC20(quoteToken).transferFrom(msg.sender, address(this), totalCost);
+        }
+        
         balances[msg.sender][baseToken] += amount;
     }
     
@@ -344,10 +391,10 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
      * @dev Execute market sell
      */
     function _executeMarketSell(address baseToken, address quoteToken, uint256 amount) internal {
-        // Simplified market sell - find best buy orders and execute
         uint256 remainingAmount = amount;
         uint256 totalRevenue = 0;
         
+        // Find buy orders and execute
         for (uint256 i = 0; i < _orderIdCounter && remainingAmount > 0; i++) {
             Order memory order = orders[i];
             if (order.isActive && 
@@ -360,13 +407,22 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
                 
                 totalRevenue += revenue;
                 remainingAmount -= matchAmount;
+                
+                // Update order
+                orders[i].amount -= matchAmount;
+                if (orders[i].amount == 0) orders[i].isActive = false;
             }
         }
         
         require(remainingAmount == 0, "Insufficient liquidity");
         
         // Transfer base tokens from seller
-        IERC20(baseToken).transferFrom(msg.sender, address(this), amount);
+        if (baseToken == NATIVE_TOKEN) {
+            require(msg.value >= amount, "Insufficient native token sent");
+        } else {
+            IERC20(baseToken).transferFrom(msg.sender, address(this), amount);
+        }
+        
         balances[msg.sender][quoteToken] += totalRevenue;
     }
     
@@ -376,7 +432,13 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
     function withdraw(address token, uint256 amount) external nonReentrant {
         require(balances[msg.sender][token] >= amount, "Insufficient balance");
         balances[msg.sender][token] -= amount;
-        IERC20(token).transfer(msg.sender, amount);
+        
+        if (token == NATIVE_TOKEN) {
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            require(success, "Failed to withdraw native tokens");
+        } else {
+            IERC20(token).transfer(msg.sender, amount);
+        }
     }
     
     /**
@@ -384,5 +446,26 @@ contract OrderBookDEX is ReentrancyGuard, Ownable {
      */
     function getUserBalance(address user, address token) external view returns (uint256) {
         return balances[user][token];
+    }
+    
+    /**
+     * @dev Check if trading pair is active
+     */
+    function isTradingPairActive(address baseToken, address quoteToken) external view returns (bool) {
+        return tradingPairs[baseToken][quoteToken].isActive;
+    }
+    
+    /**
+     * @dev Receive function for native tokens
+     */
+    receive() external payable {
+        // Allow receiving native tokens
+    }
+    
+    /**
+     * @dev Fallback function
+     */
+    fallback() external payable {
+        // Allow receiving native tokens
     }
 } 

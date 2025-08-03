@@ -24,7 +24,7 @@ export function TradingPairManager() {
   const [isChecking, setIsChecking] = useState(false)
   const [pairStatus, setPairStatus] = useState<{ exists: boolean; isActive: boolean } | null>(null)
   const [formData, setFormData] = useState({
-    baseToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
+    baseToken: '0x0000000000000000000000000000000000000000', // Native MONAD
     quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
     baseTokenSymbol: 'MONAD',
     quoteTokenSymbol: 'MONAD',
@@ -165,7 +165,7 @@ export function TradingPairManager() {
       }
       
       // Check if contract exists
-      const contractAddress = '0x6045fe7667E22CE9ff8106429128DDdC90F6F9Ae'
+      const contractAddress = '0x39DC69400B5A2eC3DC2b13fDd1D8c7f78b3D573e'
       const code = await provider.getCode(contractAddress)
       console.log('Contract exists:', code !== '0x')
       console.log('Contract code length:', code.length)
@@ -209,14 +209,9 @@ export function TradingPairManager() {
       // Try to check some common trading pairs
       const commonPairs = [
         {
-          base: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
-          quote: '0x0000000000000000000000000000000000000000', // Native MONAD
-          name: 'MONAD Token ↔ Native MONAD'
-        },
-        {
           base: '0x0000000000000000000000000000000000000000', // Native MONAD
-          quote: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
-          name: 'Native MONAD ↔ MONAD Token'
+          quote: '0x0000000000000000000000000000000000000000', // Native MONAD
+          name: 'Native MONAD ↔ Native MONAD'
         }
       ]
       
@@ -433,7 +428,7 @@ export function TradingPairManager() {
               <Button
                 onClick={() => {
                   setFormData({
-                    baseToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
+                    baseToken: '0x0000000000000000000000000000000000000000', // Native MONAD
                     quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
                     baseTokenSymbol: 'MONAD',
                     quoteTokenSymbol: 'MONAD',
