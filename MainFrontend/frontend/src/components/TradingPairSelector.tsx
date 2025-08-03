@@ -62,13 +62,13 @@ const TradingPairSelector = () => {
 
   return (
     <Card className="w-full card-glass border-border/20 h-full bg-background">
-      <CardHeader className="pb-9">
+      <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold text-foreground flex items-center">
           <TrendingUp className="h-4 w-4 mr-2 text-blue-400" />
           Trading Pair
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-3 space-y-3">
+      <CardContent className="p-3 space-y-2">
         {/* Trading Pair Selector */}
         <div className="relative" ref={dropdownRef}>
           <Button
@@ -172,7 +172,7 @@ const TradingPairSelector = () => {
 
             {/* Quick Limits */}
             <div className="p-2 bg-background rounded-lg border border-border/20">
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="flex items-center space-x-2 mb-1">
                 <BarChart3 className="h-3 w-3 text-blue-500" />
                 <span className="text-xs font-medium text-foreground">Trading Limits</span>
               </div>
@@ -199,7 +199,7 @@ const TradingPairSelector = () => {
 
              {/* Network Information */}
              <div className="p-2 bg-background rounded-lg border border-border/20">
-               <div className="flex items-center space-x-2 mb-2">
+               <div className="flex items-center space-x-2 mb-1">
                  <Info className="h-3 w-3 text-purple-500" />
                  <span className="text-xs font-medium text-foreground">Network Info</span>
                </div>

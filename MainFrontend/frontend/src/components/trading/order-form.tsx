@@ -9,6 +9,7 @@ import { useDEXStore } from '@/store/dex-store'
 import { TrendingUp, TrendingDown, Shield, AlertCircle, RefreshCw } from 'lucide-react'
 import { dexService } from '@/services/dex-service'
 import { createTokenService } from '@/services/token-service'
+import { walletService } from '@/services/wallet-service'
 import { ethers } from 'ethers'
 import { useToast } from '@/hooks/use-toast'
 
@@ -28,7 +29,7 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
   const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'needed'>('pending')
-  const { selectedPair, signer, setError, clearError } = useDEXStore()
+  const { selectedPair, setError, clearError } = useDEXStore()
   const { toast } = useToast()
   
   const {
@@ -43,6 +44,7 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
 
   // Check token approval status
   const checkApproval = async (amount: string) => {
+    const signer = walletService.getSigner()
     if (!selectedPair || !signer) return
 
     try {
@@ -74,6 +76,7 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
 
   // Approve tokens
   const handleApprove = async (amount: string) => {
+    const signer = walletService.getSigner()
     if (!selectedPair || !signer) return
 
     try {
@@ -117,6 +120,7 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
   }
 
   const onSubmit = async (data: OrderFormData) => {
+    const signer = walletService.getSigner()
     if (!selectedPair || !signer) {
       setError('Please connect wallet and select a trading pair')
       return
@@ -183,12 +187,16 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
       if (error instanceof Error) {
         if (error.message.includes('Trading pair is not active')) {
           errorMessage = 'Trading pair is not active. Please add the trading pair first or contact the contract owner.'
+        } else if (error.message.includes('Demo mode: Trading pair not active error ignored')) {
+          errorMessage = 'Demo mode: Order would be placed in production. Trading pair not active in demo.'
         } else if (error.message.includes('Insufficient balance')) {
           errorMessage = 'Insufficient token balance to place order'
         } else if (error.message.includes('Invalid amount')) {
           errorMessage = 'Invalid order amount. Please check your inputs.'
         } else if (error.message.includes('Invalid price')) {
           errorMessage = 'Invalid order price. Please check your inputs.'
+        } else if (error.message.includes('Internal JSON-RPC error')) {
+          errorMessage = 'Network error. Please check your MetaMask connection and try again.'
         } else {
           errorMessage = error.message
         }
@@ -207,10 +215,11 @@ export function OrderForm({ orderType, side }: OrderFormProps) {
 
   // Check approval status when component mounts or dependencies change
   useEffect(() => {
+    const signer = walletService.getSigner()
     if (selectedPair && signer) {
       checkApproval('0') // Check with 0 amount initially
     }
-  }, [selectedPair, signer])
+  }, [selectedPair])
 
   const isBuy = side === 'buy'
   const buttonColor = isBuy ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'

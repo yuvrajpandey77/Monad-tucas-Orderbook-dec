@@ -6,7 +6,7 @@ import UserOrders from '@/components/UserOrders';
 import DebugPanel from '@/components/DebugPanel';
 import ContractStatus from '@/components/ContractStatus';
 import TradingPairSelector from '@/components/TradingPairSelector';
-import { TradingPairManager } from '@/components/admin/trading-pair-manager';
+
 import SecurityAudit from '@/components/SecurityAudit';
 import FloatingOrbs from '@/components/FloatingOrbs';
 import { useDEXStore } from '@/store/dex-store';
@@ -192,15 +192,20 @@ const Limit = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           
           {/* Left Column - Compact Trading Interface (3 columns) */}
-          <div className="lg:col-span-3 space-y-3">
-            {/* Contract Status - Very Compact */}
-            <div className="h-24">
+          <div className="lg:col-span-3 space-y-4">
+            {/* Contract Status - Compact */}
+            <div className="h-100">
               <ContractStatus />
             </div>
             
-            {/* Trading Pair Selector - Very Compact */}
-            <div className="h-32">
+            {/* Trading Pair Selector - With all sections */}
+            <div className="h-100 ">
               <TradingPairSelector />
+            </div>
+            
+            {/* Security Audit - Below Trading Pair Selector */}
+            <div className="h-32">
+              <SecurityAudit />
             </div>
           </div>
 
@@ -215,21 +220,11 @@ const Limit = () => {
           </div>
         </div>
 
-        {/* Bottom Section - User Orders & Debug */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* User Orders */}
-          <div className="lg:col-span-2">
+        {/* Bottom Section - User Orders Full Width */}
+        <div className="mt-6">
+          {/* User Orders - Full Width */}
+          <div className="w-full">
             <UserOrders />
-          </div>
-
-          {/* Trading Pair Manager */}
-          <div className="lg:col-span-1">
-            <TradingPairManager />
-          </div>
-
-          {/* Security Audit */}
-          <div className="lg:col-span-1">
-            <SecurityAudit />
           </div>
         </div>
 

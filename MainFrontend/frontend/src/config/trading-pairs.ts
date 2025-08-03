@@ -13,21 +13,39 @@ export interface TradingPair {
  */
 const DEFAULT_TRADING_PAIRS: TradingPair[] = [
   {
-    baseToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
+    baseToken: '0x1234567890123456789012345678901234567890', // USDC Token
     quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
-    baseTokenSymbol: 'MONAD',
+    baseTokenSymbol: 'USDC',
     quoteTokenSymbol: 'MONAD',
     isActive: true,
-    minOrderSize: '1000000000000000000', // 1 MONAD
+    minOrderSize: '1000000', // 1 USDC
     pricePrecision: '1000000000000000000', // 1 MONAD precision
   },
   {
-    baseToken: '0x0000000000000000000000000000000000000000', // Native MONAD
-    quoteToken: '0x14F49BedD983423198d5402334dbccD9c45AC767', // MONAD Token
-    baseTokenSymbol: 'MONAD',
+    baseToken: '0x2345678901234567890123456789012345678901', // WETH Token
+    quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
+    baseTokenSymbol: 'WETH',
     quoteTokenSymbol: 'MONAD',
     isActive: true,
-    minOrderSize: '1000000000000000000', // 1 MONAD
+    minOrderSize: '100000000000000000', // 0.1 WETH
+    pricePrecision: '1000000000000000000', // 1 MONAD precision
+  },
+  {
+    baseToken: '0x3456789012345678901234567890123456789012', // DAI Token
+    quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
+    baseTokenSymbol: 'DAI',
+    quoteTokenSymbol: 'MONAD',
+    isActive: true,
+    minOrderSize: '1000000000000000000000', // 1000 DAI
+    pricePrecision: '1000000000000000000', // 1 MONAD precision
+  },
+  {
+    baseToken: '0x4567890123456789012345678901234567890123', // WBTC Token
+    quoteToken: '0x0000000000000000000000000000000000000000', // Native MONAD
+    baseTokenSymbol: 'WBTC',
+    quoteTokenSymbol: 'MONAD',
+    isActive: true,
+    minOrderSize: '100000000', // 1 WBTC (8 decimals)
     pricePrecision: '1000000000000000000', // 1 MONAD precision
   }
 ]
