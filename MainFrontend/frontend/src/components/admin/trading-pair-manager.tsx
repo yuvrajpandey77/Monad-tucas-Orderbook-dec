@@ -40,7 +40,31 @@ export function TradingPairManager() {
       setIsChecking(true)
       await dexService.initialize(signer)
       
-      const isActive = await dexService.isTradingPairActive(formData.baseToken, formData.quoteToken)
+      // Check if these are placeholder addresses
+      const isPlaceholderAddress = (address: string) => {
+        const placeholderPatterns = [
+          '0x1234567890123456789012345678901234567890',
+          '0x2345678901234567890123456789012345678901',
+          '0x3456789012345678901234567890123456789012',
+          '0x4567890123456789012345678901234567890123'
+        ]
+        return placeholderPatterns.includes(address.toLowerCase())
+      }
+      
+      let isActive = false;
+      try {
+        isActive = await dexService.isTradingPairActive(formData.baseToken, formData.quoteToken)
+      } catch (error) {
+        // If using placeholder addresses, assume active for demo
+        if (isPlaceholderAddress(formData.baseToken) || isPlaceholderAddress(formData.quoteToken)) {
+          console.log('Using placeholder addresses, assuming trading pair is active for demo')
+          isActive = true;
+        } else {
+          console.error('Error checking trading pair status:', error);
+          isActive = false;
+        }
+      }
+      
       setPairStatus({ exists: true, isActive })
       
       if (isActive) {

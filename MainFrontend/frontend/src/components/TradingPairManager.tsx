@@ -118,6 +118,18 @@ const TradingPairManager = () => {
 
       // Check if each pair is active on the contract
       const activePairs: TradingPair[] = [];
+      
+      // Helper function to check if address is placeholder
+      const isPlaceholderAddress = (address: string) => {
+        const placeholderPatterns = [
+          '0x1234567890123456789012345678901234567890',
+          '0x2345678901234567890123456789012345678901',
+          '0x3456789012345678901234567890123456789012',
+          '0x4567890123456789012345678901234567890123'
+        ]
+        return placeholderPatterns.includes(address.toLowerCase())
+      }
+      
       for (const pair of predefinedPairs) {
         try {
           const isActive = await dexService.isTradingPairActive(pair.baseToken, pair.quoteToken);
@@ -127,10 +139,20 @@ const TradingPairManager = () => {
           });
         } catch (error) {
           console.error(`Error checking pair ${pair.baseTokenSymbol}/${pair.quoteTokenSymbol}:`, error);
-          activePairs.push({
-            ...pair,
-            isActive: false
-          });
+          
+          // If using placeholder addresses, assume active for demo
+          if (isPlaceholderAddress(pair.baseToken) || isPlaceholderAddress(pair.quoteToken)) {
+            console.log(`Using placeholder addresses for ${pair.baseTokenSymbol}/${pair.quoteTokenSymbol}, assuming active for demo`)
+            activePairs.push({
+              ...pair,
+              isActive: true
+            });
+          } else {
+            activePairs.push({
+              ...pair,
+              isActive: false
+            });
+          }
         }
       }
 
