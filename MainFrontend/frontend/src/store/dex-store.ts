@@ -87,6 +87,9 @@ export const useDEXStore = create<DEXStore>((set, get) => ({
       const signer = walletService.getSigner();
       if (!signer) return false;
       
+      // Initialize the DEX service with the signer first
+      await dexService.initialize(signer);
+      
       const isDeployed = await dexService.isContractDeployed();
       return isDeployed;
     } catch (error) {

@@ -7,7 +7,7 @@ export const NETWORK_CONFIG = {
     decimals: 18
   },
   rpcUrls: ['https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe'],
-  blockExplorerUrls: ['https://explorer.monad.xyz']
+  blockExplorerUrls: ['https://explorer.testnet.monad.xyz']
 }
 
 // Alternative network config for better MetaMask compatibility
@@ -20,9 +20,9 @@ export const MONAD_NETWORK_CONFIG = {
     decimals: 18
   },
   rpcUrls: ['https://monad-testnet.g.alchemy.com/v2/hl5Gau0XVV37m-RDdhcRzqCh7ISwmOAe'],
-  blockExplorerUrls: ['https://explorer.monad.xyz']
+  blockExplorerUrls: ['https://explorer.testnet.monad.xyz']
 }
 
 export const CONTRACT_ADDRESSES = {
-  ORDERBOOK_DEX: '0x39DC69400B5A2eC3DC2b13fDd1D8c7f78b3D573e'
+  ORDERBOOK_DEX: '0xa6b0D09e1c6CbBDE669eBBD0854515F002a7732e'
 } 

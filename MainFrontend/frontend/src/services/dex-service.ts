@@ -101,13 +101,27 @@ export class DEXService {
   // Check if contract is deployed and accessible
   async isContractDeployed(): Promise<boolean> {
     try {
-      if (!this.contract) return false
+      if (!this.contract) {
+        console.warn('DEX service not initialized. Contract deployment check failed.')
+        return false
+      }
       
       const provider = this.contract.runner?.provider
-      if (!provider) return false
+      if (!provider) {
+        console.warn('No provider available for contract deployment check.')
+        return false
+      }
       
       const code = await provider.getCode(this.contractAddress)
-      return code !== '0x'
+      const isDeployed = code !== '0x'
+      
+      console.log('Contract deployment check:', {
+        address: this.contractAddress,
+        codeLength: code.length,
+        isDeployed
+      })
+      
+      return isDeployed
     } catch (error) {
       console.warn('Contract deployment check failed:', error)
       return false

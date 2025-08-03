@@ -92,6 +92,27 @@ export class WalletService {
   }
 
   /**
+   * Get the preferred wallet provider (MetaMask first)
+   */
+  private getPreferredProvider(): any {
+    if (typeof window === 'undefined') return null;
+    
+    // Check if MetaMask is available and prioritize it
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      console.log('Using MetaMask wallet');
+      return window.ethereum;
+    }
+    
+    // Check for other providers as fallback
+    if (window.ethereum) {
+      console.log('Using fallback wallet provider (not MetaMask)');
+      return window.ethereum;
+    }
+    
+    return null;
+  }
+
+  /**
    * Auto-reconnect on page load
    */
   private async autoReconnect(): Promise<void> {
@@ -104,8 +125,8 @@ export class WalletService {
 
       const { address, chainId } = JSON.parse(storedConnection);
       
-      // Check if the wallet is still available
-      if (!this.isEthereumAvailable()) {
+      // Check if MetaMask is still available
+      if (!this.isMetaMaskAvailable()) {
         this.clearStoredConnection();
         return;
       }
@@ -114,8 +135,16 @@ export class WalletService {
       console.log('Attempting auto-reconnect...');
       this.updateState({ isLoading: true, error: null });
 
+      // Get the preferred provider
+      const preferredProvider = this.getPreferredProvider();
+      if (!preferredProvider) {
+        this.clearStoredConnection();
+        this.updateState({ isLoading: false });
+        return;
+      }
+
       // Request account access
-      const accounts = await window.ethereum!.request({
+      const accounts = await preferredProvider.request({
         method: 'eth_requestAccounts',
       }) as string[];
 
@@ -134,7 +163,7 @@ export class WalletService {
       }
 
       // Create provider and signer
-      const provider = new BrowserProvider(window.ethereum!);
+      const provider = new BrowserProvider(preferredProvider);
       const signer = await provider.getSigner();
 
       // Get network information
@@ -193,23 +222,30 @@ export class WalletService {
     try {
       this.updateState({ isLoading: true, error: null });
 
-      if (!this.isEthereumAvailable()) {
-        throw new Error('No Ethereum provider found. Please install MetaMask or another wallet.');
+      // Check specifically for MetaMask
+      if (!this.isMetaMaskAvailable()) {
+        throw new Error('MetaMask is not available. Please install MetaMask wallet.');
       }
 
-      // Request account access
-      const accounts = await window.ethereum!.request({
+      // Get the preferred provider (MetaMask first)
+      const preferredProvider = this.getPreferredProvider();
+      if (!preferredProvider) {
+        throw new Error('No wallet provider found. Please install MetaMask.');
+      }
+
+      // Request account access from the preferred provider
+      const accounts = await preferredProvider.request({
         method: 'eth_requestAccounts',
       }) as string[];
 
       if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts found. Please unlock your wallet.');
+        throw new Error('No accounts found. Please unlock your MetaMask wallet.');
       }
 
       const address = accounts[0];
       
-      // Create provider and signer
-      const provider = new BrowserProvider(window.ethereum!);
+      // Create provider and signer from the preferred provider
+      const provider = new BrowserProvider(preferredProvider);
       const signer = await provider.getSigner();
 
       // Get network information
@@ -254,13 +290,18 @@ export class WalletService {
    * Switch to Monad network
    */
   async switchToMonadNetwork(): Promise<void> {
-    if (!this.isEthereumAvailable()) {
-      throw new Error('No Ethereum provider found.');
+    if (!this.isMetaMaskAvailable()) {
+      throw new Error('MetaMask is not available. Please install MetaMask wallet.');
     }
 
     try {
+      const preferredProvider = this.getPreferredProvider();
+      if (!preferredProvider) {
+        throw new Error('No wallet provider found.');
+      }
+
       // Try to switch to Monad network
-      await window.ethereum!.request({
+      await preferredProvider.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: MONAD_NETWORK_CONFIG.chainId }],
       });
@@ -268,7 +309,12 @@ export class WalletService {
       // If the network doesn't exist, add it
       if (switchError.code === 4902) {
         try {
-          await window.ethereum!.request({
+          const preferredProvider = this.getPreferredProvider();
+          if (!preferredProvider) {
+            throw new Error('No wallet provider found.');
+          }
+          
+          await preferredProvider.request({
             method: 'wallet_addEthereumChain',
             params: [MONAD_NETWORK_CONFIG],
           });

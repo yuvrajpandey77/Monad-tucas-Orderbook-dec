@@ -32,7 +32,7 @@ export const ORDERBOOK_DEX_ABI = [
 
 export const CONTRACTS = {
   ORDERBOOK_DEX: {
-    address: '0x39DC69400B5A2eC3DC2b13fDd1D8c7f78b3D573e',
+    address: '0xa6b0D09e1c6CbBDE669eBBD0854515F002a7732e',
     abi: ORDERBOOK_DEX_ABI
   }
 } as const;
